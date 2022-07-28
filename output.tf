@@ -1,4 +1,4 @@
-output "Vpc-id" {
+/* output "Vpc-id" {
   value = aws_vpc.dev-vpc.id
 }
 
@@ -17,4 +17,4 @@ output "subnet3" {
 
 output "ami_id" {
   value = data.aws_ami.latest-amazon-image.id
-}
+} */

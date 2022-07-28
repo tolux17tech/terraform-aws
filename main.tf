@@ -35,56 +35,19 @@ resource "aws_vpc" "dev-vpc" {
   }
 }
 
-resource "aws_subnet" "dev-subnet-1" {
-  vpc_id            = aws_vpc.dev-vpc.id
-  cidr_block        = var.cidr_block[0]
-  availability_zone = var.az[0]
+module "subnet" {
+  source = "/Users/dc/Documents/Terraform-AWS/modules/subnet"
+  vpc_id = aws_vpc.dev-vpc.id 
+  cidr_block = var.cidr_block
+  az = var.az
+  name = var.name
+  default_route_table_id =aws_vpc.dev-vpc.default_route_table_id
+  
 
-  tags = {
-    Name = "${var.name}-subnet-1"
-  }
-}
-
-resource "aws_subnet" "dev-subnet-2" {
-  vpc_id            = aws_vpc.dev-vpc.id
-  cidr_block        = var.cidr_block[1]
-  availability_zone = var.az[1]
-
-  tags = {
-    Name = "${var.name}-subnet-2"
-  }
-}
-
-resource "aws_subnet" "dev-subnet-3" {
-  vpc_id            = aws_vpc.dev-vpc.id
-  cidr_block        = var.cidr_block[2]
-  availability_zone = var.az[2]
-
-  tags = {
-    Name = "${var.name}-subnet-3"
-  }
-}
-
-resource "aws_internet_gateway" "my-gw" {
-  vpc_id = aws_vpc.dev-vpc.id
-
-  tags = {
-    Name = "${var.name}-my-gw"
-  }
+  
 }
 
 
-resource "aws_default_route_table" "main-rtb" {
-  default_route_table_id = aws_vpc.dev-vpc.default_route_table_id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.my-gw.id
-  }
-  tags = {
-    Name = "${var.name}-Main-rtb"
-  }
-
-}
 
 resource "aws_default_security_group" "my-sg" {
 
@@ -135,11 +98,17 @@ data "aws_ami" "latest-amazon-image" {
     values = ["hvm"]
   }
 }
+resource "aws_key_pair" "server-key" {
+  key_name   = "server-key"
+  public_key = file(var.public_key)
+
+
+}
 
 resource "aws_instance" "web-server" {
   ami                         = data.aws_ami.latest-amazon-image.id
   instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.dev-subnet-3.id
+  subnet_id                   = module.subnet.subnetc.id
   vpc_security_group_ids      = [aws_default_security_group.my-sg.id]
   associate_public_ip_address = true
   /* availability_zone = var.az[1] */
@@ -163,45 +132,5 @@ resource "aws_instance" "web-server" {
   }
 }
 
-resource "aws_key_pair" "server-key" {
-  key_name   = "server-key"
-  public_key = file(var.public_key)
 
 
-}
-
-
-
-
-
-
-
-/* resource "aws_route_table" "my-dev-rtb" {
-    vpc_id = aws_vpc.dev-vpc.id
-    route {
-        cidr_block = "0.0.0.0/0"
-        gateway_id = aws_internet_gateway.my-gw.id
-    }
-    tags = {
-        Name = "${var.name}-my-dev-rtb"
-    }
-} */
-
-/* resource "aws_route_table_association" "rta" {
-
-  
-  subnet_id      = aws_subnet.dev-subnet-3.id
-  route_table_id = aws_route_table.my-dev-rtb.id
-}
-
-resource "aws_route_table_association" "rtb" {
-  
-  subnet_id      = aws_subnet.dev-subnet-2.id
-  route_table_id = aws_route_table.my-dev-rtb.id
-}
-
-resource "aws_route_table_association" "rtc" {
-  
-  subnet_id      = aws_subnet.dev-subnet-1.id
-  route_table_id = aws_route_table.my-dev-rtb.id
-} */
